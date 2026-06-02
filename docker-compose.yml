@@ -1,0 +1,50 @@
+version: '3.8'
+services:
+  metabase:
+    image: metabase/metabase
+    container_name: metabase
+    ports:
+      - "3000:3000"
+    volumes:
+      - metabase-data:/metabase-data
+    environment:
+      MB_DB_TYPE: postgres
+      MB_DB_DBNAME: metabasedb
+      MB_DB_PORT: 5432
+      MB_DB_USER: metabase
+      MB_DB_PASS: 12345678910
+      MB_DB_HOST: postgres-db
+    networks:
+      - metabase-net
+    restart: always
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+
+  postgres-db:
+    image: postgres:latest
+    container_name: postgres-db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    environment:
+      POSTGRES_DB: metabasedb
+      POSTGRES_USER: metabase
+      POSTGRES_PASSWORD: 12345678910
+    networks:
+      - metabase-net
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U metabase -d metabasedb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  metabase-data:
+  postgres-data:
+
+networks:
+  metabase-net:
+    driver: bridge
